@@ -1,2 +1,38 @@
 # ESPNOW-and-MQTT
-This code initializes ESP-NOW to receive motion sensor data from a sender, then forwards it to an MQTT broker via MQTT protocol. Data can be sent to multiple destinations like a dashboard or a database for visualization.
+We are using MQTT to forward the motion sensor data received from NodeMCU to Raspberry Pi (with Linux based OS) via data cable. MQTT allows us to receive data on a terminal and use it to execute other commands, unlike ESP-NOW. Below are the commands we use to set up the Mosquitto MQTT broker:
+```
+sudo apt-get install mosquitto
+sudo apt-get install mosquitto-clients -y
+```
+
+To make necessary changes, the configuration file of Mosquitto needs to be accessed which can be done using the following command:
+```
+sudo nano /etc/mosquitto/mosquitto.conf
+```
+
+Change the configurations file to
+```
+pid_file /var/run/mosquitto.pid
+persistence true
+persistence_location /var/lib/mosquitto/
+log_dest file /var/log/mosquitto/mosquitto.log
+allow_anonymous false
+password_file /etc/mosquitto/pwfile
+listener 1883
+```
+
+Next, we will generate a new username and password for MQTT, which will be used for sending and receiving messages.
+```
+sudo mosquitto_passwd -c /etc/mosquitto/pwfile "username"
+sudo mosquitto_passwd -c /etc/mosquitto/pwfile "pass"
+```
+
+In order to get data on terminal via MQTT we can use the command
+```
+mosquitto_sub -d -u username -P password -t test
+```
+and to send data via terminal we can use
+```
+mosquitto_pub -d -u username -P password -t test -m "Hello Pritha!"
+```
+
