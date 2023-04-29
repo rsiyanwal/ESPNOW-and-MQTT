@@ -36,3 +36,5 @@ and to send data via terminal we can use
 mosquitto_pub -d -u username -P password -t test -m "Hello Pritha!"
 ```
 
+### Caveat:
+The loop is designed to restart the NodeMCU after a specified time period. We have observed that when the NodeMCU is running with both ESP-NOW and MQTT protocols, it can freeze if no data is sent by the sensor for an extended period of time. To ensure the system remains operational, we restart the NodeMCU periodically. However, this process incurs an overhead of approximately 5 seconds for the NodeMCU to restart and reconnect to the WiFi network.
