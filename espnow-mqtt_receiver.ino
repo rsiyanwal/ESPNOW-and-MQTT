@@ -1,3 +1,15 @@
+/*
+The code sets up an ESP8266 WiFi module to connect to a WiFi network and a MQTT broker. 
+It initializes the ESP-NOW protocol to receive data packets from a sender node. Once data is received, 
+it is published to a specified MQTT topic using the PubSubClient library. 
+The MQTT broker can then be subscribed to this topic to receive the published data.
+
+The code also contains a callback function that executes when data is received. 
+The received data is then printed to the serial monitor for debugging purposes.
+
+Finally, the code runs in a loop that restarts the ESP8266 module after a specified time delay.
+*/
+
 /* Getting the Libraries */
 #include<ESP8266WiFi.h>
 #include<PubSubClient.h>
@@ -14,6 +26,9 @@ typedef struct struct_message{
   char b[32];
 }Message;
 
+/*
+Fetching the crucial data required for connecting to WiFi and MQTT
+*/
 // IPAddress
 IPAddress ip(192, 168, 4, 45);
 IPAddress gateway(192, 168, 4, 1);
@@ -21,15 +36,12 @@ IPAddress subnet(255, 255, 255, 0);
 IPAddress dns1(8, 8, 8, 8);
 IPAddress dns2(8, 8, 4, 4);
 
-/* Creating a Message */
+// Creating a Message
 Message message;
 
-/* Credentials */
-// WiFi
-//const char* ssid = "snsriramalab";
+// Credentials 
 const char* ssid = "ESP-SoftAP";
-//const char* wifi_passwd = "thereisnospoon";
-//const char* wifi_passwd = "Cloud&Smart";
+const char* wifi_passwd = "thereisnospoon";
 
 // MQTT
 const char* mqtt_server = "192.168.4.4";
@@ -38,13 +50,17 @@ const char* mqtt_username = "pi-101";
 const char* mqtt_passwd = "pi";
 const char* clientID = "ESP-004";
 
-/* MQTT WiFi and MQTT Client Objects */
+/* 
+Creating a WiFiClient (as previously done in https://github.com/rsiyanwal/Handling-Motion-Sensor-With-ESPNOW) 
+and a PubSubClient library instance to set up MQTT
+*/
 WiFiClient wifi_client;
 PubSubClient client(mqtt_server, 1883, wifi_client);
 
-/* Callback Function that will be executed when data is received */
+/* 
+Publishing a Message to MQTT Topic when received.
+*/
 void OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len){
-//  stop = clock();
   memcpy(&message, incomingData, sizeof(message));
   Serial.println(message.a);
   Serial.println(message.b);
@@ -53,17 +69,12 @@ void OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len){
   client.subscribe(mqtt_topic);
 }
 
-/* Run once */
+/*
+Setting up the serial monitor, connecting to WiFi, configuring the MQTT server, subscribing to a topic, 
+initializing ESP-NOW, and registering a callback function
+*/
 void setup(){
-//  start = clock();
   Serial.begin(115200);
-  /*
-  if(WiFi.config(ip, dns1, gateway, subnet)){
-    Serial.println("Static IP Configured");
-  }else{
-    Serial.println("Static IP Configuration Failed");
-  }
-  */
   WiFi.begin(ssid);
 
   while(WiFi.status() != WL_CONNECTED){
@@ -99,7 +110,7 @@ void setup(){
   esp_now_register_recv_cb(OnDataRecv);
 }
 
-/* Callback! */
+// Callback!
 void callback(char* topic, byte* payload, unsigned int length){
   Serial.print("Message arrived in the topic ");
   Serial.println(topic);
@@ -111,7 +122,13 @@ void callback(char* topic, byte* payload, unsigned int length){
   Serial.println("_______________");
 }
 
-/* Runs in a loop */
+/*
+The loop is designed to restart the NodeMCU after a specified time period. 
+We have observed that when the NodeMCU is running with both ESP-NOW and MQTT protocols, 
+it can freeze if no data is sent by the sensor for an extended period of time. 
+To ensure the system remains operational, we restart the NodeMCU periodically. 
+However, this process incurs an overhead of approximately 5 seconds for the NodeMCU to restart and reconnect to the WiFi network.
+*/
 void loop(){
   if((millis() - lastTime) > timerDelay){
     ESP.restart();
